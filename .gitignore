@@ -1,0 +1,22 @@
+desktop.ini
+.VSCodeCounter
+
+# Flutter
+.dart_tool/
+build/
+.flutter-plugins-dependencies
+# pubspec.lock
+
+# Android
+android/.gradle/
+android/.kotlin
+android/build/
+android/local.properties
+
+# Windows
+windows/
+
+# 签名文件
+*.keystore
+*.jks
+key.properties
