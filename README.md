@@ -84,13 +84,6 @@ flutter run
 flutter build apk --release
 ```
 
-### 构建脚本
-
-项目提供了两个 Windows 批处理脚本用于快速构建：
-
-- **`PACKAGE.BAT`**：构建 Release APK
-- **`PACKAGE_DEBUG.BAT`**：构建 Debug APK
-
 ---
 
 ## 📁 项目结构
