@@ -3,7 +3,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -15,26 +14,26 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "org.yangsongh.gfcampuscard"
-    compileSdk = flutter.targetSdkVersion
+    namespace = "io.github.yangsongh.gfcampuscard"
+    // compileSdk = flutter.targetSdkVersion
+    compileSdk = 37
+    ndkVersion = "28.2.13676358"
     
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     defaultConfig {
-        applicationId = "org.yangsongh.gfcampuscard"
+        applicationId = "io.github.yangsongh.gfcampuscard"
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = 3
-        versionName = "1.0.2_260714_Release"
+        // targetSdk = flutter.targetSdkVersion
+        targetSdk = 37
+        versionCode = 4
+        versionName = "1.0.3_261017_Release"
         ndk {
-            abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a"))
+            abiFilters.clear()
+            abiFilters.add("arm64-v8a")
         }
     }
 
@@ -56,7 +55,15 @@ android {
         }
         release {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

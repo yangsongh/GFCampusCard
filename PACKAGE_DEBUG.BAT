@@ -1,26 +1,18 @@
 @echo off
-cls
 
-taskkill /im java.exe /f 2>nul
+echo 正在停止 Gradle 任务...
+cd android
+call gradlew --stop
+cd ..
+
+echo 正在清理...
+call flutter clean
+
+echo 正在运行 flutter build apk...
+call flutter build apk --debug --android-skip-build-dependency-validation
+
 if %errorlevel% equ 0 (
-    timeout 3
+    echo APK 构建成功！
+) else (
+    echo APK 构建失败！
 )
-
-echo 正在清理 build\app\intermediates\assets 目录...
-rmdir /s /q "build\app\intermediates\assets"
-
-echo 正在清理 build\app\intermediates\merged_native_libs 目录...
-rmdir /s /q "build\app\intermediates\merged_native_libs"
-
-@REM echo 正在清理 build\app\intermediates\native_symbol_tables 目录...
-@REM rmdir /s /q "build\app\intermediates\native_symbol_tables"
-
-echo 正在清理 build\app\intermediates\stripped_native_libs 目录
-rmdir /s /q "build\app\intermediates\stripped_native_libs"
-
-echo 正在清理 build\app\intermediates\incremental\packageDebug\tmp 目录...
-rmdir /s /q "build\app\intermediates\incremental\packageDebug\tmp"
-
-echo 正在清理 build\app\outputs 目录...
-rmdir /s /q "build\app\outputs"
-

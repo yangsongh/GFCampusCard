@@ -204,7 +204,7 @@ class _DebugPageState extends State<DebugPage> {
                     Icons.security,
                     color: AppCfgs.primaryColor,
                   ),
-                  activeColor: AppCfgs.primaryColor,
+                  activeThumbColor: AppCfgs.primaryColor,
                 ),
               ),
 

@@ -5,7 +5,8 @@ desktop.ini
 .dart_tool/
 build/
 .flutter-plugins-dependencies
-# pubspec.lock
+.widget_preview/
+devtools_options.yaml
 
 # Android
 android/.gradle/

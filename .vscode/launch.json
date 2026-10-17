@@ -7,19 +7,28 @@
     {
       "name": "GFCampusCard",
       "request": "launch",
-      "type": "dart"
+      "type": "dart",
+      "toolArgs": [
+        "--android-skip-build-dependency-validation"
+      ]
     },
     {
       "name": "GFCampusCard (profile mode)",
       "request": "launch",
       "type": "dart",
-      "flutterMode": "profile"
+      "flutterMode": "profile",
+      "toolArgs": [
+        "--android-skip-build-dependency-validation"
+      ]
     },
     {
       "name": "GFCampusCard (release mode)",
       "request": "launch",
       "type": "dart",
-      "flutterMode": "release"
+      "flutterMode": "release",
+      "toolArgs": [
+        "--android-skip-build-dependency-validation"
+      ]
     }
   ]
 }

@@ -1,4 +1,4 @@
-package org.yangsongh.gfcampuscard
+package io.github.yangsongh.gfcampuscard
 
 import io.flutter.embedding.android.FlutterActivity
 
