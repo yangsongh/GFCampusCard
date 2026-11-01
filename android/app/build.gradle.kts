@@ -30,7 +30,7 @@ android {
         // targetSdk = flutter.targetSdkVersion
         targetSdk = 37
         versionCode = 4
-        versionName = "1.0.3_261017_Release"
+        versionName = "1.0.3_261101_Release"
         ndk {
             abiFilters.clear()
             abiFilters.add("arm64-v8a")

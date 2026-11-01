@@ -1,11 +1,28 @@
 enum FlowType {
-  consume('0'),
-  deposit('1'),
-  modifyInfo('6'),
-  manualDeposit('10');
+  consume('0', '消费'),
+  deposit('1', '存款'),
+  modifyInfo('6', '账户信息变更'),
+  manualDeposit('10', '人工充值'),
+  arrears('14', '欠款'),
+  cancelArrears('15', '取消欠款'),
+  reserveMeal('17', '预订餐');
 
-  const FlowType(this.value);
+  const FlowType(this.value, this.label);
+
   final String value;
+  final String label;
+
+  /// 需要在流水中显示映射文案的记录类型
+  static const Set<String> _displayLabelTypes = {'10', '14', '15', '17'};
+
+  /// 根据 recordType 获取显示文案, 非映射类型返回 null
+  static String? displayLabelOf(String value) {
+    if (!_displayLabelTypes.contains(value)) return null;
+    for (final type in FlowType.values) {
+      if (type.value == value) return type.label;
+    }
+    return null;
+  }
 }
 
 enum AttendanceStatus {
@@ -39,6 +56,12 @@ class ServiceCfgs {
   static const String schoolCode = 'gfcxxx';
   static const String getAuthUrl =
       'https://appsvr01.szxinyu.com/SchoolUserCenter/loginUserSso/login';
+  static const String getLoginValidCodeUrl =
+      'https://appsvr01.szxinyu.com/SchoolUserCenter/loginUserSso/getLoginValidCode';
+  static const String getValidCodeUrl =
+      'https://appsvr01.szxinyu.com/SchoolUserCenter/loginUserSso/getValidCode';
+  static const String findPasswordUrl =
+      'https://appsvr01.szxinyu.com/SchoolUserCenter/loginUserSso/findPassword';
   static const String loginInfoUrl =
       'https://appsvr01.szxinyu.com/SchoolUserCenter/loginUserSso/loginInto';
   static const String loginBackUrl =

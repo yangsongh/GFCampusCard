@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:gf_campus_card/main.dart' show MainScreen;
 import 'package:gf_campus_card/service/gf_campus_card.dart' show GFCampusCard;
 import 'package:gf_campus_card/pages/home/children/attendance_page.dart'
@@ -28,6 +29,7 @@ class _HomePageState extends State<HomePage> {
   List<dynamic>? _flowRecords;
   List<dynamic>? _attendanceRecords;
   List<dynamic>? _rechargeRecords;
+  String? _hostelName;
 
   @override
   void initState() {
@@ -64,6 +66,19 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           _cardInfo = cardInfoResult['data'];
         });
+      }
+
+      // 获取宿舍号信息 (失败不影响主界面)
+      try {
+        final detailsResult = await widget.campusCard.getDetailsInfo();
+        if (detailsResult['success'] == true) {
+          final hostelName = _parseHostelName(detailsResult['data']);
+          if (mounted) {
+            setState(() => _hostelName = hostelName);
+          }
+        }
+      } catch (e) {
+        widget.campusCard.logger.warning('获取宿舍号失败: $e');
       }
 
       final prefs = await SharedPreferences.getInstance();
@@ -122,6 +137,77 @@ class _HomePageState extends State<HomePage> {
   /// 导航到某页
   void _navigateToPage(BuildContext context, Widget page) {
     Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+  }
+
+  /// 解析宿舍号, 拼接格式: {hostelName}{hostel_room_name}宿舍
+  String? _parseHostelName(dynamic details) {
+    try {
+      final data = details is Map ? details['data'] : null;
+      if (data is! Map) return null;
+
+      final hostelList = data['hostelList'];
+      if (hostelList is! List || hostelList.isEmpty) return null;
+      final first = hostelList.first;
+      if (first is! Map) return null;
+
+      final hostel = first['hostel'];
+      final hostelName = hostel is Map
+          ? hostel['hostelName']?.toString()
+          : null;
+
+      // 房间号优先取根级 hostelRoom, 否则取 hostelList[0].hostelRoom
+      final rootRoom = data['hostelRoom'];
+      final itemRoom = first['hostelRoom'];
+      final roomSource = rootRoom is Map && rootRoom.isNotEmpty
+          ? rootRoom
+          : itemRoom;
+      final roomName = roomSource is Map
+          ? roomSource['hostel_room_name']?.toString()
+          : null;
+
+      // 任一字段缺失时不显示
+      if (hostelName == null ||
+          hostelName.isEmpty ||
+          roomName == null ||
+          roomName.isEmpty) {
+        return null;
+      }
+      return '$hostelName$roomName宿舍';
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 充值弹窗: 提示在微信中打开并复制充值链接
+  Future<void> _showRechargeDialog() async {
+    final copied = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('充值提示'),
+        content: const Text('请在微信中打开链接充值'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('关闭'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(
+                const ClipboardData(text: AppCfgs.rechargeUrl),
+              );
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop(true);
+              }
+            },
+            child: const Text('复制'),
+          ),
+        ],
+      ),
+    );
+
+    if (copied == true && mounted) {
+      await Utils.showSnackBar(context, '充值链接已复制, 请到微信中打开');
+    }
   }
 
   @override
@@ -316,10 +402,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.monetization_on),
-                      onPressed: () =>
-                          Utils.launchURL(AppCfgs.rechargeUrl, (error) {
-                            Utils.showSnackBar(context, error);
-                          }),
+                      onPressed: _showRechargeDialog,
                       tooltip: '充值',
                     ),
                   ],
@@ -403,10 +486,24 @@ class _HomePageState extends State<HomePage> {
             ),
             const Divider(height: 20),
 
-            // 学号: 7520XXXXXXX
-            Text(
-              '学号: $studentId',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            // 学号: 7520XXXXXXX (右侧显示宿舍号)
+            Row(
+              children: [
+                Text(
+                  '学号: $studentId',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                if (_hostelName != null) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _hostelName!,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 3),
 

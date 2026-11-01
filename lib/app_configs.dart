@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 
 class AppCfgs {
   // App版本号
-  static const versionName = 'v1.0.2 正式版';
+  static const versionName = 'v1.0.3 正式版';
   // 显示考勤图片提示 的 登录计数阈值
   static const int showPhotoHintThreshold = 3;
   // 调试模式密码
   static const String debugModePassword = 'hygf999';
 
-  // 忘记密码链接
-  static const String forgotPasswordUrl =
-      'https://appsvr01.szxinyu.com/SchoolUserOnline/wechatServer/index';
+  // 忘记密码 已改为 App 内重置密码, 不再使用网页链接
   // 请假链接
   static const String leaveRequestUrl =
       'https://appsvr01.szxinyu.com/SchoolUserOnline/wechatServer/toLeaveManagement';

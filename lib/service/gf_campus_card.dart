@@ -196,6 +196,161 @@ class GFCampusCard {
     }
   }
 
+  /// 请求登录短信验证码
+  Future<Map<String, dynamic>> requestLoginValidCode() async {
+    logger.info('请求登录短信验证码...手机号: $phone');
+    try {
+      final response = await dio
+          .post(
+            ServiceCfgs.getLoginValidCodeUrl,
+            data: {'phone': phone, 'schoolCode': ''},
+          )
+          .timeout(const Duration(seconds: ServiceCfgs.timeout));
+      _throwForStatus(response);
+
+      final respJson = response.data;
+      logger.debug('登录验证码响应: $respJson');
+      if (respJson['code']?.toString() == '0') {
+        return {'success': true};
+      }
+      return {'success': false, 'message': respJson['msg'] ?? '获取验证码失败'};
+    } catch (e) {
+      final String error = '获取登录验证码失败: $e';
+      logger.error(error);
+      return {'success': false, 'message': error};
+    }
+  }
+
+  /// 请求重置密码短信验证码
+  Future<Map<String, dynamic>> requestResetPasswordValidCode() async {
+    logger.info('请求重置密码短信验证码...手机号: $phone');
+    try {
+      final response = await dio
+          .post(
+            ServiceCfgs.getValidCodeUrl,
+            data: {'phone': phone, 'schoolcode': ''},
+          )
+          .timeout(const Duration(seconds: ServiceCfgs.timeout));
+      _throwForStatus(response);
+
+      final respJson = response.data;
+      logger.debug('重置密码验证码响应: $respJson');
+      if (respJson['end'] == 'ok' ||
+          respJson['message'] == '发送消息成功') {
+        return {'success': true};
+      }
+      return {'success': false, 'message': respJson['message'] ?? '获取验证码失败'};
+    } catch (e) {
+      final String error = '获取重置密码验证码失败: $e';
+      logger.error(error);
+      return {'success': false, 'message': error};
+    }
+  }
+
+  /// 重置密码
+  Future<Map<String, dynamic>> resetPassword({
+    required String validCode,
+    required String newPwd,
+    required String confirmPwd,
+  }) async {
+    logger.info('重置密码...手机号: $phone');
+    try {
+      final response = await dio
+          .post(
+            ServiceCfgs.findPasswordUrl,
+            data: {
+              'phone': phone,
+              'validCode': validCode,
+              'newPwd': newPwd,
+              'confirmPwd': confirmPwd,
+            },
+          )
+          .timeout(const Duration(seconds: ServiceCfgs.timeout));
+      _throwForStatus(response);
+
+      final respJson = response.data;
+      logger.debug('重置密码响应: $respJson');
+      if (respJson['code'] == 'success') {
+        return {'success': true, 'message': '密码重置成功'};
+      }
+      if (respJson['code'] == 'multiple') {
+        return {
+          'success': false,
+          'message': '该手机号绑定多个账号, 请在网页端重置密码',
+        };
+      }
+      return {'success': false, 'message': respJson['msg'] ?? '重置密码失败'};
+    } catch (e) {
+      final String error = '重置密码失败: $e';
+      logger.error(error);
+      return {'success': false, 'message': error};
+    }
+  }
+
+  /// 通过短信验证码登录账号并更新Cookie
+  Future<Map<String, dynamic>> loginWithValidCode(String validCode) async {
+    logger.info('通过短信验证码登录...手机号: $phone');
+    final stopwatch = Stopwatch()..start();
+
+    try {
+      final response = await dio
+          .post(
+            ServiceCfgs.getAuthUrl,
+            data: {
+              'username': '',
+              'password': '',
+              'schoolCode': '',
+              'loginPhone': phone,
+              'validCode': validCode,
+              'loginType': 'validcode',
+              'type': '',
+              'openId': '',
+            },
+          )
+          .timeout(const Duration(seconds: ServiceCfgs.timeout));
+      _throwForStatus(response);
+
+      final respJson = response.data;
+      logger.debug('短信验证码登录响应: $respJson');
+
+      // 单账号登录成功返回 end=ok, 多绑定账号返回 end=Multiple
+      late Map<String, dynamic> authDict;
+      if (respJson['end'] == 'ok') {
+        authDict = {
+          'authorization': respJson['Authorization'],
+          'type': respJson['category'],
+          'userId': respJson['userId'],
+          'schoolcode': respJson['schoolCode'],
+        };
+      } else if (respJson['end'] == 'Multiple') {
+        final List authList = json.decode(respJson['Authorization'] ?? '[]');
+        if (authList.isEmpty) {
+          return {'success': false, 'message': '该手机号未绑定账号'};
+        }
+        authDict = authList[0];
+      } else {
+        return {'success': false, 'message': respJson['message'] ?? '登录失败'};
+      }
+
+      // 使用令牌登录
+      final Map<String, dynamic> loginResult = await _getLoginCookie(authDict);
+      if (loginResult['success'] != true) {
+        return loginResult;
+      }
+
+      cookie = loginResult['cookie'];
+      logger.info('短信验证码登录成功');
+      return {'success': true, 'cookie': cookie};
+    } catch (e) {
+      final String error = '短信验证码登录失败: $e';
+      logger.error(error);
+      return {'success': false, 'message': error};
+    } finally {
+      stopwatch.stop();
+      logger.info('短信验证码登录用时: ${stopwatch.elapsedMilliseconds / 1000}s');
+    }
+  }
+
   /// 检查当前会话是否有效
   Future<bool> _checkSessionValid() async {
     try {
@@ -362,7 +517,9 @@ class GFCampusCard {
       List<Map<String, String>> records = [];
       // 依次向字典中添加记录
       for (final record in pageInfo['list'] ?? []) {
-        final recordType = record['type'] ?? '(未知类型)'; // 记录类型
+        final recordType = record['type']?.toString() ?? '(未知类型)'; // 记录类型
+        // 需求2: recordType 显示文案映射 (10/14/15/17)
+        final displayLabel = FlowType.displayLabelOf(recordType);
         final isDeposit =
             recordType == FlowType.deposit.value ||
             recordType == FlowType.manualDeposit.value; // 是否是存款
@@ -387,14 +544,15 @@ class GFCampusCard {
             : record['schName'] ?? '未知餐次'; // 餐次
 
         records.add({
-          '交易类型': isDeposit
-              ? '存款'
-              : isModifyInfo
-              ? '账户信息变更'
-              : '消费',
+          '交易类型': displayLabel ??
+              (isDeposit
+                  ? '存款'
+                  : isModifyInfo
+                  ? '账户信息变更'
+                  : '消费'),
           '机器号': record['machineNumber'] ?? '(未知机器号)',
           '交易名称': transactionName,
-          '餐次/类型': mealType,
+          '餐次/类型': displayLabel ?? mealType,
           '交易时间': Utils.convertTime(record['insertTime'] ?? 0),
           '交易金额': amount,
           '交易前余额': Utils.convertMoney(record['beforeMoney'] ?? 0),
