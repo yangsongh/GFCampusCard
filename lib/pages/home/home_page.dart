@@ -486,8 +486,9 @@ class _HomePageState extends State<HomePage> {
             ),
             const Divider(height: 20),
 
-            // 学号: 7520XXXXXXX (右侧显示宿舍号)
+            // 学号: 7520XXXXXXX (右侧显示宿舍号, 与下方“有效期至”右对齐)
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   '学号: $studentId',
@@ -495,11 +496,12 @@ class _HomePageState extends State<HomePage> {
                 ),
                 if (_hostelName != null) ...[
                   const SizedBox(width: 12),
-                  Expanded(
+                  Flexible(
                     child: Text(
                       _hostelName!,
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                       overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
                     ),
                   ),
                 ],
